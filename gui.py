@@ -61,7 +61,8 @@ def main():
     # Создаём шарики
     balls = create_balls(NUM_BALLS, BALL_RADIUS, SCREEN_WIDTH, SCREEN_HEIGHT)
     inventory_ball = None  # Шарик, который «всосан» мышкой
-    inventory_ball_index = -1  # Индекс шарика в списке (чтобы потом вернуть)
+    inventory_ball_index = -1  # Индекс шарика в списке
+    inventory_color_timer = 0  # Таймер для смены цвета в инвентаре
 
     running = True
     while running:
@@ -77,20 +78,20 @@ def main():
                 if inventory_ball is not None:
                     # Проверка: клик по зоне удаления?
                     if DELETE_ZONE.collidepoint(mx, my):
-                        # Удаляем шарик — просто выбрасываем из инвентаря
+                        # Удаляем шарик
                         inventory_ball = None
                         inventory_ball_index = -1
+                        inventory_color_timer = 0
                     else:
                         # Выплёвываем шарик: задаём ему направление к курсору
                         inventory_ball.move_towards(mx, my, MOVE_SPEED)
+                        # Восстанавливаем оригинальный радиус
+                        inventory_ball.radius = inventory_ball.original_radius
                         # Возвращаем шарик в общий список
-                        if inventory_ball_index >= 0:
-                            # Восстанавливаем на место, если индекс валидный
-                            # (но он мог сдвинуться — ищем по позиции)
-                            pass
                         balls.append(inventory_ball)
                         inventory_ball = None
                         inventory_ball_index = -1
+                        inventory_color_timer = 0
                 else:
                     # Инвентарь пуст — пытаемся всосать шарик
                     for idx, ball in enumerate(balls):
@@ -98,11 +99,14 @@ def main():
                             inventory_ball = ball
                             inventory_ball_index = idx
                             balls.pop(idx)
+                            # Сжимаем шарик в 1.5 раза
+                            inventory_ball.radius = int(inventory_ball.original_radius * 2 / 3)
                             # Перемещаем шарик за курсором
                             inventory_ball.x = mx
                             inventory_ball.y = my
                             inventory_ball.vx = 0
                             inventory_ball.vy = 0
+                            inventory_color_timer = 0
                             break
 
         # ---- Обновление логики ----
@@ -111,11 +115,16 @@ def main():
 
         handle_collisions(balls)
 
-        # Если есть шарик в инвентаре — он следует за мышкой
+        # Если есть шарик в инвентаре — он следует за мышкой и переливается цветами
         if inventory_ball is not None:
             mx, my = pygame.mouse.get_pos()
             inventory_ball.x = mx
             inventory_ball.y = my
+            # Меняем цвет каждые 8 кадров (~7-8 раз в секунду)
+            inventory_color_timer += 1
+            if inventory_color_timer >= 8:
+                inventory_color_timer = 0
+                inventory_ball.color = random.choice(BRIGHT_COLORS)
 
         # ---- Отрисовка ----
         screen.fill((255, 255, 255))  # Белый фон

@@ -25,6 +25,7 @@ class BallLogic:
         self.x = x
         self.y = y
         self.radius = radius
+        self.original_radius = radius  # Сохраняем оригинальный радиус
         self.color = color  # RGB кортеж, например (255, 0, 0)
         self.vx = vx if vx is not None else random.uniform(-2, 2)
         self.vy = vy if vy is not None else random.uniform(-2, 2)
